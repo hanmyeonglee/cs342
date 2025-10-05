@@ -238,14 +238,135 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
     Your minimax agent with alpha-beta pruning (problem 2)
   """
 
-  def getAction(self, gameState):
+  def getAction(self, gameState: GameState) -> str:
     """
       Returns the minimax action using self.depth and self.evaluationFunction
     """
+    AGENT_NUM = gameState.getNumAgents()
+    PACMAN_INDEX = self.index
+    DEPTH = self.depth
+    INITIAL_LEGAL_ACTIONS = gameState.getLegalActions(PACMAN_INDEX)
 
-    # BEGIN_YOUR_ANSWER (our solution is 42 lines of code, but don't worry if you deviate from this)
-    raise NotImplementedError  # remove this line before writing code
-    # END_YOUR_ANSWER
+    INF = float('inf')
+    N_INF = float('-inf')
+
+    assert DEPTH >= 0, "Depth should be non-negative integer."
+    assert INITIAL_LEGAL_ACTIONS, "There should be at least one legal action."
+    assert AGENT_NUM >= 1, "There should be at least one agent."
+    assert 0 <= PACMAN_INDEX < AGENT_NUM, "Pacman index out of bounds."
+    assert callable(self.evaluationFunction), "evaluationFunction should be callable."
+    assert type(self.evaluationFunction(gameState)) in (int, float), "evaluationFunction should return a number."
+
+    if len(INITIAL_LEGAL_ACTIONS) == 1:
+      return INITIAL_LEGAL_ACTIONS.pop()
+
+    def get_next_agent_index(agentIndex: int) -> int:
+      return (agentIndex + 1) % AGENT_NUM
+    
+    stack: list[tuple[int, int, GameState, bool, int | float, int | float, list[str] | None]] = []
+    returnStack: list[int | float] = []
+
+    nextAgentIndex = get_next_agent_index(PACMAN_INDEX)
+    nextDepth = 1 if nextAgentIndex == PACMAN_INDEX else 0
+    for action in INITIAL_LEGAL_ACTIONS:
+      successor = gameState.generateSuccessor(PACMAN_INDEX, action)
+      stack.append((nextAgentIndex, nextDepth, successor, False, N_INF, INF, None))
+
+    while stack:
+      agentIndex, depth, gameState, isRetState, alpha, beta, legalActions = stack.pop()
+
+      isMaxLayer = agentIndex == PACMAN_INDEX
+      
+      if isRetState:
+        compFunc = max if isMaxLayer else min
+        a, b = returnStack.pop(), returnStack.pop()
+        retVal = compFunc(a, b)
+
+        if legalActions:
+          if (isMaxLayer and retVal < beta) or (not isMaxLayer and retVal > alpha):
+            if isMaxLayer:
+              alpha = max(alpha, retVal)
+            else:
+              beta = min(beta, retVal)
+
+            nextAgentIndex = get_next_agent_index(agentIndex)
+            nextDepth = (depth + 1) if nextAgentIndex == PACMAN_INDEX else depth
+
+            action = legalActions.pop()
+            successor = gameState.generateSuccessor(agentIndex, action)
+
+            stack.append((agentIndex, depth, gameState, True, alpha, beta, legalActions))
+            stack.append((nextAgentIndex, nextDepth, successor, False, alpha, beta, None))
+      elif gameState.isWin() or gameState.isLose() or depth >= DEPTH:
+        retVal = self.evaluationFunction(gameState)
+      else:
+        legalActions = gameState.getLegalActions(agentIndex)
+
+        if not legalActions:
+          retVal = self.evaluationFunction(gameState)
+        else:
+          nextAgentIndex = get_next_agent_index(agentIndex)
+          nextDepth = (depth + 1) if nextAgentIndex == PACMAN_INDEX else depth
+          
+          action = legalActions.pop()
+          successor = gameState.generateSuccessor(agentIndex, action)
+
+          stack.append((agentIndex, depth, gameState, True, alpha, beta, legalActions))
+          stack.append((nextAgentIndex, nextDepth, successor, False, alpha, beta, None))
+
+          retVal = N_INF if isMaxLayer else INF
+
+      returnStack.append(retVal)
+
+    if len(returnStack) != len(INITIAL_LEGAL_ACTIONS):
+      raise RuntimeError("Something went wrong while searching minimax tree.")
+    
+    score, action = max(zip(returnStack, reversed(INITIAL_LEGAL_ACTIONS)))
+    return action
+
+    """ def minimax_with_alpha_beta_pruning(agentIndex: int, depth: int, gameState: GameState, alpha: float | int, beta: float | int) -> float:
+      if gameState.isWin() or gameState.isLose() or depth >= DEPTH:
+        return self.evaluationFunction(gameState)
+
+      legalActions = gameState.getLegalActions(agentIndex)
+
+      if not legalActions:
+        return self.evaluationFunction(gameState)
+      
+      isMaxLayer = agentIndex == PACMAN_INDEX
+      
+      compFunc = max if isMaxLayer else min
+      value = N_INF if isMaxLayer else INF
+
+      for action in legalActions:
+        successor = gameState.generateSuccessor(agentIndex, action)
+        nextAgentIndex = get_next_agent_index(agentIndex)
+        nextDepth = (depth + 1) if nextAgentIndex == PACMAN_INDEX else depth
+        value = compFunc(value, minimax_with_alpha_beta_pruning(nextAgentIndex, nextDepth, successor, alpha, beta))
+        
+        if isMaxLayer:
+          if value >= beta: return value
+          alpha = max(alpha, value)
+        else:
+          if value <= alpha: return value
+          beta = min(beta, value)
+
+      return value
+      
+    alpha = N_INF
+    beta = INF
+    action = None
+    for act in INITIAL_LEGAL_ACTIONS:
+      successor = gameState.generateSuccessor(PACMAN_INDEX, act)
+      nextAgentIndex = get_next_agent_index(PACMAN_INDEX)
+      nextDepth = 1 if nextAgentIndex == PACMAN_INDEX else 0
+      value = minimax_with_alpha_beta_pruning(nextAgentIndex, nextDepth, successor, alpha, beta)
+      if value > alpha:
+        alpha = value
+        action = act
+    
+    print(f"MinimaxAgent: Chose action {action} with score {alpha}.")
+    return action """
 
 ######################################################################################
 # Problem 3a: implementing expectimax
