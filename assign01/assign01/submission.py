@@ -1,8 +1,8 @@
 ## ID: 20240614 NAME: Lee, Jongwon
 ######################################################################################
 # Problem 2a
-# minimax value of the root node: 12345
-# pruned edges (in order): a, b, c, d, ...
+# minimax value of the root node: 5
+# pruned edges (in order): h, m, t, x
 ######################################################################################
 
 from util import manhattanDistance
