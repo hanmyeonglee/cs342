@@ -1,4 +1,4 @@
-## ID: 20241234 NAME: Woo, Sujin
+## ID: 20240614 NAME: Lee, Jongwon
 ######################################################################################
 # Problem 2a
 # minimax value of the root node: 12345
@@ -10,7 +10,7 @@ from game import Directions
 import random, util
 
 from game import Agent
-
+from pacman import GameState
 
 class ReflexAgent(Agent):
   """
@@ -136,7 +136,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
     Your minimax agent (problem 1)
   """
 
-  def getAction(self, gameState):
+  def getAction(self, gameState: GameState):
     """
       Returns the minimax action from the current gameState using self.depth
       and self.evaluationFunction. Terminal states can be found by one of the following: 
@@ -170,10 +170,41 @@ class MinimaxAgent(MultiAgentSearchAgent):
       self.depth:
         The depth to which search should continue
     """
+    AGENT_NUM = gameState.getNumAgents()
+    PACMAN_INDEX = self.index
 
-    # BEGIN_YOUR_ANSWER (our solution is 30 lines of code, but don't worry if you deviate from this)
-    raise NotImplementedError  # remove this line before writing code
-    # END_YOUR_ANSWER
+    def get_next_agent_index(agentIndex: int) -> int:
+      return (agentIndex + 1) % AGENT_NUM
+
+    stack: list[tuple[int, int, GameState, str, bool, int]] = [(PACMAN_INDEX, 0, gameState, '', False, 0)]
+    returnStack: list[tuple[int, str]] = []
+    while stack:
+      agentIndex, depth, gameState, prevAction, isRetState, retNums = stack.pop()
+
+      if isRetState:
+        compareFunc = max if agentIndex == PACMAN_INDEX else min
+        retVal = compareFunc((returnStack.pop() for _ in range(retNums)), key=lambda x: x[0])
+      elif gameState.isWin() or gameState.isLose() or depth == self.depth:
+        retVal = self.evaluationFunction(gameState)
+      else:
+        legalActions = gameState.getLegalActions(agentIndex)
+
+        if not legalActions:
+          retVal = self.evaluationFunction(gameState)
+        else:
+          nextAgentIndex = get_next_agent_index(agentIndex)
+          nextDepth = (depth + 1) if nextAgentIndex == PACMAN_INDEX else depth
+
+          stack.append((agentIndex, depth, gameState, '', True, len(legalActions)))
+          for action in legalActions:
+            successor = gameState.generateSuccessor(agentIndex, action)
+            stack.append((nextAgentIndex, nextDepth, successor, action, False, 0))
+
+      returnStack.append((retVal, prevAction))
+
+    score, action = returnStack.pop()
+    return action
+    
 
 ######################################################################################
 # Problem 2b: implementing alpha-beta
