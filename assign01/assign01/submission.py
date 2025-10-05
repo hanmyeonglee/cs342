@@ -136,7 +136,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
     Your minimax agent (problem 1)
   """
 
-  def getAction(self, gameState: GameState):
+  def getAction(self, gameState: GameState) -> str:
     """
       Returns the minimax action from the current gameState using self.depth
       and self.evaluationFunction. Terminal states can be found by one of the following: 
@@ -172,19 +172,38 @@ class MinimaxAgent(MultiAgentSearchAgent):
     """
     AGENT_NUM = gameState.getNumAgents()
     PACMAN_INDEX = self.index
+    DEPTH = self.depth
+    INITIAL_LEGAL_ACTIONS = gameState.getLegalActions(PACMAN_INDEX)
+
+    assert DEPTH >= 0, "Depth should be non-negative integer."
+    assert INITIAL_LEGAL_ACTIONS, "There should be at least one legal action."
+    assert AGENT_NUM >= 1, "There should be at least one agent."
+    assert 0 <= PACMAN_INDEX < AGENT_NUM, "Pacman index out of bounds."
+    assert callable(self.evaluationFunction), "evaluationFunction should be callable."
+    assert type(self.evaluationFunction(gameState)) in (int, float), "evaluationFunction should return a number."
+
+    if len(INITIAL_LEGAL_ACTIONS) == 1:
+      return INITIAL_LEGAL_ACTIONS.pop()
 
     def get_next_agent_index(agentIndex: int) -> int:
       return (agentIndex + 1) % AGENT_NUM
 
-    stack: list[tuple[int, int, GameState, str, bool, int]] = [(PACMAN_INDEX, 0, gameState, '', False, 0)]
-    returnStack: list[tuple[int, str]] = []
+    stack: list[tuple[int, int, GameState, bool, int]] = []
+    returnStack: list[int | float] = []
+
+    nextAgentIndex = get_next_agent_index(PACMAN_INDEX)
+    nextDepth = 1 if nextAgentIndex == PACMAN_INDEX else 0
+    for action in INITIAL_LEGAL_ACTIONS:
+      successor = gameState.generateSuccessor(PACMAN_INDEX, action)
+      stack.append((nextAgentIndex, nextDepth, successor, False, 0))
+
     while stack:
-      agentIndex, depth, gameState, prevAction, isRetState, retNums = stack.pop()
+      agentIndex, depth, gameState, isRetState, retNums = stack.pop()
 
       if isRetState:
         compareFunc = max if agentIndex == PACMAN_INDEX else min
-        retVal = compareFunc((returnStack.pop() for _ in range(retNums)), key=lambda x: x[0])
-      elif gameState.isWin() or gameState.isLose() or depth == self.depth:
+        retVal = compareFunc((returnStack.pop() for _ in range(retNums)))
+      elif gameState.isWin() or gameState.isLose() or depth >= DEPTH:
         retVal = self.evaluationFunction(gameState)
       else:
         legalActions = gameState.getLegalActions(agentIndex)
@@ -195,14 +214,19 @@ class MinimaxAgent(MultiAgentSearchAgent):
           nextAgentIndex = get_next_agent_index(agentIndex)
           nextDepth = (depth + 1) if nextAgentIndex == PACMAN_INDEX else depth
 
-          stack.append((agentIndex, depth, gameState, '', True, len(legalActions)))
+          stack.append((agentIndex, depth, gameState, True, len(legalActions)))
           for action in legalActions:
             successor = gameState.generateSuccessor(agentIndex, action)
-            stack.append((nextAgentIndex, nextDepth, successor, action, False, 0))
+            stack.append((nextAgentIndex, nextDepth, successor, False, 0))
 
-      returnStack.append((retVal, prevAction))
+          continue
 
-    score, action = returnStack.pop()
+      returnStack.append(retVal)
+
+    if len(returnStack) != len(INITIAL_LEGAL_ACTIONS):
+      raise RuntimeError("Something went wrong while searching minimax tree.")
+
+    score, action = max(zip(returnStack, reversed(INITIAL_LEGAL_ACTIONS)))
     return action
     
 
