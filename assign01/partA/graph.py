@@ -85,5 +85,7 @@ plt.ylim(-1.5, 1.5)
 plt.title("Constraint Graph over the A, B, C, and D")
 plt.axis("off")
 
-#plt.show()
+if not os.path.exists(os.path.join(current_dir, "report_img")):
+    os.makedirs(os.path.join(current_dir, "report_img"))
+
 plt.savefig(os.path.join(current_dir, "report_img", "constraint_graph.png"), bbox_inches='tight')
