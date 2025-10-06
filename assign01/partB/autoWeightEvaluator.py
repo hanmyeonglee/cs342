@@ -52,27 +52,27 @@ tinyNormalModifiers = [get_modifiers(i / 10000) for i in range(9000, 11001, 25)]
 confs = [
     {
         "title": f"{titlePrefix}FoodDistInfluence",
-        "weightModifiers": smallNormalModifiers
+        "weightModifiers": tinyNormalModifiers
     },
     {
         "title": f"{titlePrefix}ScaredGhostDistInfluence",
-        "weightModifiers": smallNormalModifiers
+        "weightModifiers": tinyNormalModifiers
     },
     {
         "title": f"{titlePrefix}ScoreInfluence",
-        "weightModifiers": smallNormalModifiers
+        "weightModifiers": tinyNormalModifiers
     },
     {
         "title": f"{titlePrefix}NumFoodInfluence",
-        "weightModifiers": smallNormalModifiers
+        "weightModifiers": tinyNormalModifiers
     },
     {
         "title": f"{titlePrefix}NumCapsuleInfluence",
-        "weightModifiers": smallNormalModifiers
+        "weightModifiers": tinyNormalModifiers
     },
     {
         "title": f"{titlePrefix}CapsuleDistInfluence",
-        "weightModifiers": smallNormalModifiers
+        "weightModifiers": tinyNormalModifiers
     }
 ]
 
@@ -112,8 +112,8 @@ for i, conf in enumerate(confs):
         stats.append((t, b''.join(program.recvlines(numlines=4, keepends=True)).decode()))
         program.close()
     
-    for (t, stat), w in zip(stats, weights):
-        print('=' * 10 + t + f'(weight = {w})' + '=' * 10)
+    for t, stat in stats:
+        print('=' * 10 + t + '=' * 10)
         print(stat)
         print()
 
