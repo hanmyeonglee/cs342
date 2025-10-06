@@ -377,7 +377,7 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
     Your expectimax agent (problem 3)
   """
 
-  def getAction(self, gameState):
+  def getAction(self, gameState: GameState):
     """
       Returns the expectimax action using self.depth and self.evaluationFunction
 
@@ -450,14 +450,45 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
 ######################################################################################
 # Problem 4a (extra credit): creating a better evaluation function
 
-def betterEvaluationFunction(currentGameState):
+def betterEvaluationFunction(currentGameState: GameState) -> float | int:
   """
   Your extreme, unstoppable evaluation function (problem 4).
   """
+  #if currentGameState.isWin(): return float('inf')
+  #if currentGameState.isLose(): return float('-inf')
 
-  # BEGIN_YOUR_ANSWER (our solution is 60 lines of code, but don't worry if you deviate from this)
-  raise NotImplementedError  # remove this line before writing code
-  # END_YOUR_ANSWER
+  INF = float('inf')
+  epsilon = 0.01
+
+  score = currentGameState.getScore()
+  
+  pacmanPos = currentGameState.getPacmanPosition()
+  capsulesPos = currentGameState.getCapsules()
+  foodsPos = currentGameState.getFood().asList()
+  scaredGhosts = [ghost for ghost in currentGameState.getGhostStates() if ghost.scaredTimer >= 1]
+  ghosts = [ghost for ghost in currentGameState.getGhostStates() if not ghost.scaredTimer]
+
+  foodDists = [INF, *(manhattanDistance(pacmanPos, foodPos) for foodPos in foodsPos)]
+  capsuleDists = [INF, *(manhattanDistance(pacmanPos, capPos) for capPos in capsulesPos)]
+  scaredGhostDists = [INF, *(manhattanDistance(pacmanPos, ghost.getPosition()) for ghost in scaredGhosts)]
+  ghostDists = [INF, *(manhattanDistance(pacmanPos, ghost.getPosition()) for ghost in ghosts)]
+
+  minFoodDist = min(foodDists) + epsilon
+  minCapsuleDist = min(capsuleDists) + epsilon
+  minScaredGhostDist = min(scaredGhostDists) + epsilon
+  minGhostDist = min(ghostDists) + epsilon
+
+  features = [1 / minFoodDist, 1 / minScaredGhostDist, score, len(foodsPos), len(capsulesPos)]
+  weights = [10, 200, 1, -10, -800]
+
+  if not scaredGhosts:
+    features.append(1 / minCapsuleDist)
+    weights.append(400)
+  
+  finalScore = sum(map(lambda x: x[0] * x[1], zip(features, weights)))
+  finalScore -= 1 / minGhostDist * abs(finalScore)
+
+  return finalScore
 
 # Abbreviation
 better = betterEvaluationFunction
