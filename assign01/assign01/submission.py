@@ -471,22 +471,19 @@ def betterEvaluationFunction(currentGameState: GameState) -> float | int:
   foodDists = [INF, *(manhattanDistance(pacmanPos, foodPos) for foodPos in foodsPos)]
   capsuleDists = [INF, *(manhattanDistance(pacmanPos, capPos) for capPos in capsulesPos)]
   scaredGhostDists = [INF, *(manhattanDistance(pacmanPos, ghost.getPosition()) for ghost in scaredGhosts)]
-  ghostDists = [INF, *(manhattanDistance(pacmanPos, ghost.getPosition()) for ghost in ghosts)]
-
+  
   minFoodDist = min(foodDists) + epsilon
   minCapsuleDist = min(capsuleDists) + epsilon
   minScaredGhostDist = min(scaredGhostDists) + epsilon
-  minGhostDist = min(ghostDists) + epsilon
 
   features = [1 / minFoodDist, 1 / minScaredGhostDist, score, len(foodsPos), len(capsulesPos)]
-  weights = [10, 200, 1, -10, -800]
+  weights = [9, 165, 1.3125, -9, -800]
 
   if not scaredGhosts:
     features.append(1 / minCapsuleDist)
-    weights.append(400)
-  
+    weights.append(550)
+
   finalScore = sum(map(lambda x: x[0] * x[1], zip(features, weights)))
-  finalScore -= 1 / minGhostDist * abs(finalScore)
 
   return finalScore
 
