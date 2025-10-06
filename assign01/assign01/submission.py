@@ -325,50 +325,6 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
     score, action = max(zip(returnStack, reversed(INITIAL_LEGAL_ACTIONS)))
     return action
 
-    """ def minimax_with_alpha_beta_pruning(agentIndex: int, depth: int, gameState: GameState, alpha: float | int, beta: float | int) -> float:
-      if gameState.isWin() or gameState.isLose() or depth >= DEPTH:
-        return self.evaluationFunction(gameState)
-
-      legalActions = gameState.getLegalActions(agentIndex)
-
-      if not legalActions:
-        return self.evaluationFunction(gameState)
-      
-      isMaxLayer = agentIndex == PACMAN_INDEX
-      
-      compFunc = max if isMaxLayer else min
-      value = N_INF if isMaxLayer else INF
-
-      for action in legalActions:
-        successor = gameState.generateSuccessor(agentIndex, action)
-        nextAgentIndex = get_next_agent_index(agentIndex)
-        nextDepth = (depth + 1) if nextAgentIndex == PACMAN_INDEX else depth
-        value = compFunc(value, minimax_with_alpha_beta_pruning(nextAgentIndex, nextDepth, successor, alpha, beta))
-        
-        if isMaxLayer:
-          if value >= beta: return value
-          alpha = max(alpha, value)
-        else:
-          if value <= alpha: return value
-          beta = min(beta, value)
-
-      return value
-      
-    alpha = N_INF
-    beta = INF
-    action = None
-    for act in INITIAL_LEGAL_ACTIONS:
-      successor = gameState.generateSuccessor(PACMAN_INDEX, act)
-      nextAgentIndex = get_next_agent_index(PACMAN_INDEX)
-      nextDepth = 1 if nextAgentIndex == PACMAN_INDEX else 0
-      value = minimax_with_alpha_beta_pruning(nextAgentIndex, nextDepth, successor, alpha, beta)
-      if value > alpha:
-        alpha = value
-        action = act
-    
-    print(f"MinimaxAgent: Chose action {action} with score {alpha}.")
-    return action """
-
 ######################################################################################
 # Problem 3a: implementing expectimax
 
@@ -454,9 +410,6 @@ def betterEvaluationFunction(currentGameState: GameState) -> float | int:
   """
   Your extreme, unstoppable evaluation function (problem 4).
   """
-  #if currentGameState.isWin(): return float('inf')
-  #if currentGameState.isLose(): return float('-inf')
-
   INF = float('inf')
   epsilon = 0.01
 
@@ -466,7 +419,6 @@ def betterEvaluationFunction(currentGameState: GameState) -> float | int:
   capsulesPos = currentGameState.getCapsules()
   foodsPos = currentGameState.getFood().asList()
   scaredGhosts = [ghost for ghost in currentGameState.getGhostStates() if ghost.scaredTimer >= 1]
-  ghosts = [ghost for ghost in currentGameState.getGhostStates() if not ghost.scaredTimer]
 
   foodDists = [INF, *(manhattanDistance(pacmanPos, foodPos) for foodPos in foodsPos)]
   capsuleDists = [INF, *(manhattanDistance(pacmanPos, capPos) for capPos in capsulesPos)]
