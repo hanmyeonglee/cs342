@@ -11,6 +11,7 @@ import random, util
 
 from game import Agent
 from pacman import GameState
+from collections.abc import Iterable
 
 class ReflexAgent(Agent):
   """
@@ -383,10 +384,68 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
       All ghosts should be modeled as choosing uniformly at random from their
       legal moves.
     """
+    AGENT_NUM = gameState.getNumAgents()
+    PACMAN_INDEX = self.index
+    DEPTH = self.depth
+    INITIAL_LEGAL_ACTIONS = gameState.getLegalActions(PACMAN_INDEX)
 
-    # BEGIN_YOUR_ANSWER (our solution is 30 lines of code, but don't worry if you deviate from this)
-    raise NotImplementedError  # remove this line before writing code
-    # END_YOUR_ANSWER
+    assert DEPTH >= 0, "Depth should be non-negative integer."
+    assert INITIAL_LEGAL_ACTIONS, "There should be at least one legal action."
+    assert AGENT_NUM >= 1, "There should be at least one agent."
+    assert 0 <= PACMAN_INDEX < AGENT_NUM, "Pacman index out of bounds."
+    assert callable(self.evaluationFunction), "evaluationFunction should be callable."
+    assert type(self.evaluationFunction(gameState)) in (int, float), "evaluationFunction should return a number."
+
+    if len(INITIAL_LEGAL_ACTIONS) == 1:
+      return INITIAL_LEGAL_ACTIONS.pop()
+
+    def get_next_agent_index(agentIndex: int) -> int:
+      return (agentIndex + 1) % AGENT_NUM
+    
+    def mean(values: Iterable[int | float]) -> float:
+      vals = list(values)
+      return sum(vals) / len(vals)
+
+    stack: list[tuple[int, int, GameState, bool, int]] = []
+    returnStack: list[int | float] = []
+
+    nextAgentIndex = get_next_agent_index(PACMAN_INDEX)
+    nextDepth = 1 if nextAgentIndex == PACMAN_INDEX else 0
+    for action in INITIAL_LEGAL_ACTIONS:
+      successor = gameState.generateSuccessor(PACMAN_INDEX, action)
+      stack.append((nextAgentIndex, nextDepth, successor, False, 0))
+
+    while stack:
+      agentIndex, depth, gameState, isRetState, retNums = stack.pop()
+
+      if isRetState:
+        compareFunc = max if agentIndex == PACMAN_INDEX else mean
+        retVal = compareFunc((returnStack.pop() for _ in range(retNums)))
+      elif gameState.isWin() or gameState.isLose() or depth >= DEPTH:
+        retVal = self.evaluationFunction(gameState)
+      else:
+        legalActions = gameState.getLegalActions(agentIndex)
+
+        if not legalActions:
+          retVal = self.evaluationFunction(gameState)
+        else:
+          nextAgentIndex = get_next_agent_index(agentIndex)
+          nextDepth = (depth + 1) if nextAgentIndex == PACMAN_INDEX else depth
+
+          stack.append((agentIndex, depth, gameState, True, len(legalActions)))
+          for action in legalActions:
+            successor = gameState.generateSuccessor(agentIndex, action)
+            stack.append((nextAgentIndex, nextDepth, successor, False, 0))
+
+          continue
+
+      returnStack.append(retVal)
+
+    if len(returnStack) != len(INITIAL_LEGAL_ACTIONS):
+      raise RuntimeError("Something went wrong while searching minimax tree.")
+
+    score, action = max(zip(returnStack, reversed(INITIAL_LEGAL_ACTIONS)))
+    return action
 
 ######################################################################################
 # Problem 4a (extra credit): creating a better evaluation function
