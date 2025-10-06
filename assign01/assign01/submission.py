@@ -1,8 +1,8 @@
-## ID: 20241234 NAME: Woo, Sujin
+## ID: 20240614 NAME: Lee, Jongwon
 ######################################################################################
 # Problem 2a
-# minimax value of the root node: 12345
-# pruned edges (in order): a, b, c, d, ...
+# minimax value of the root node: 5
+# pruned edges (in order): h, m, t, x
 ######################################################################################
 
 from util import manhattanDistance
@@ -10,7 +10,8 @@ from game import Directions
 import random, util
 
 from game import Agent
-
+from pacman import GameState
+from collections.abc import Iterable
 
 class ReflexAgent(Agent):
   """
@@ -136,7 +137,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
     Your minimax agent (problem 1)
   """
 
-  def getAction(self, gameState):
+  def getAction(self, gameState: GameState) -> str:
     """
       Returns the minimax action from the current gameState using self.depth
       and self.evaluationFunction. Terminal states can be found by one of the following: 
@@ -170,10 +171,65 @@ class MinimaxAgent(MultiAgentSearchAgent):
       self.depth:
         The depth to which search should continue
     """
+    AGENT_NUM = gameState.getNumAgents()
+    PACMAN_INDEX = self.index
+    DEPTH = self.depth
+    INITIAL_LEGAL_ACTIONS = gameState.getLegalActions(PACMAN_INDEX)
 
-    # BEGIN_YOUR_ANSWER (our solution is 30 lines of code, but don't worry if you deviate from this)
-    raise NotImplementedError  # remove this line before writing code
-    # END_YOUR_ANSWER
+    assert DEPTH >= 0, "Depth should be non-negative integer."
+    assert INITIAL_LEGAL_ACTIONS, "There should be at least one legal action."
+    assert AGENT_NUM >= 1, "There should be at least one agent."
+    assert 0 <= PACMAN_INDEX < AGENT_NUM, "Pacman index out of bounds."
+    assert callable(self.evaluationFunction), "evaluationFunction should be callable."
+    assert type(self.evaluationFunction(gameState)) in (int, float), "evaluationFunction should return a number."
+
+    if len(INITIAL_LEGAL_ACTIONS) == 1:
+      return INITIAL_LEGAL_ACTIONS.pop()
+
+    def get_next_agent_index(agentIndex: int) -> int:
+      return (agentIndex + 1) % AGENT_NUM
+
+    stack: list[tuple[int, int, GameState, bool, int]] = []
+    returnStack: list[int | float] = []
+
+    nextAgentIndex = get_next_agent_index(PACMAN_INDEX)
+    nextDepth = 1 if nextAgentIndex == PACMAN_INDEX else 0
+    for action in INITIAL_LEGAL_ACTIONS:
+      successor = gameState.generateSuccessor(PACMAN_INDEX, action)
+      stack.append((nextAgentIndex, nextDepth, successor, False, 0))
+
+    while stack:
+      agentIndex, depth, gameState, isRetState, retNums = stack.pop()
+
+      if isRetState:
+        compareFunc = max if agentIndex == PACMAN_INDEX else min
+        retVal = compareFunc((returnStack.pop() for _ in range(retNums)))
+      elif gameState.isWin() or gameState.isLose() or depth >= DEPTH:
+        retVal = self.evaluationFunction(gameState)
+      else:
+        legalActions = gameState.getLegalActions(agentIndex)
+
+        if not legalActions:
+          retVal = self.evaluationFunction(gameState)
+        else:
+          nextAgentIndex = get_next_agent_index(agentIndex)
+          nextDepth = (depth + 1) if nextAgentIndex == PACMAN_INDEX else depth
+
+          stack.append((agentIndex, depth, gameState, True, len(legalActions)))
+          for action in legalActions:
+            successor = gameState.generateSuccessor(agentIndex, action)
+            stack.append((nextAgentIndex, nextDepth, successor, False, 0))
+
+          continue
+
+      returnStack.append(retVal)
+
+    if len(returnStack) != len(INITIAL_LEGAL_ACTIONS):
+      raise RuntimeError("Something went wrong while searching minimax tree.")
+
+    score, action = max(zip(returnStack, reversed(INITIAL_LEGAL_ACTIONS)))
+    return action
+    
 
 ######################################################################################
 # Problem 2b: implementing alpha-beta
@@ -183,14 +239,91 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
     Your minimax agent with alpha-beta pruning (problem 2)
   """
 
-  def getAction(self, gameState):
+  def getAction(self, gameState: GameState) -> str:
     """
       Returns the minimax action using self.depth and self.evaluationFunction
     """
+    AGENT_NUM = gameState.getNumAgents()
+    PACMAN_INDEX = self.index
+    DEPTH = self.depth
+    INITIAL_LEGAL_ACTIONS = gameState.getLegalActions(PACMAN_INDEX)
 
-    # BEGIN_YOUR_ANSWER (our solution is 42 lines of code, but don't worry if you deviate from this)
-    raise NotImplementedError  # remove this line before writing code
-    # END_YOUR_ANSWER
+    INF = float('inf')
+    N_INF = float('-inf')
+
+    assert DEPTH >= 0, "Depth should be non-negative integer."
+    assert INITIAL_LEGAL_ACTIONS, "There should be at least one legal action."
+    assert AGENT_NUM >= 1, "There should be at least one agent."
+    assert 0 <= PACMAN_INDEX < AGENT_NUM, "Pacman index out of bounds."
+    assert callable(self.evaluationFunction), "evaluationFunction should be callable."
+    assert type(self.evaluationFunction(gameState)) in (int, float), "evaluationFunction should return a number."
+
+    if len(INITIAL_LEGAL_ACTIONS) == 1:
+      return INITIAL_LEGAL_ACTIONS.pop()
+
+    def get_next_agent_index(agentIndex: int) -> int:
+      return (agentIndex + 1) % AGENT_NUM
+    
+    stack: list[tuple[int, int, GameState, bool, int | float, int | float, list[str] | None]] = []
+    returnStack: list[int | float] = []
+
+    nextAgentIndex = get_next_agent_index(PACMAN_INDEX)
+    nextDepth = 1 if nextAgentIndex == PACMAN_INDEX else 0
+    for action in INITIAL_LEGAL_ACTIONS:
+      successor = gameState.generateSuccessor(PACMAN_INDEX, action)
+      stack.append((nextAgentIndex, nextDepth, successor, False, N_INF, INF, None))
+
+    while stack:
+      agentIndex, depth, gameState, isRetState, alpha, beta, legalActions = stack.pop()
+
+      isMaxLayer = agentIndex == PACMAN_INDEX
+      
+      if isRetState:
+        compFunc = max if isMaxLayer else min
+        a, b = returnStack.pop(), returnStack.pop()
+        retVal = compFunc(a, b)
+
+        if legalActions:
+          if (isMaxLayer and retVal < beta) or (not isMaxLayer and retVal > alpha):
+            if isMaxLayer:
+              alpha = max(alpha, retVal)
+            else:
+              beta = min(beta, retVal)
+
+            nextAgentIndex = get_next_agent_index(agentIndex)
+            nextDepth = (depth + 1) if nextAgentIndex == PACMAN_INDEX else depth
+
+            action = legalActions.pop()
+            successor = gameState.generateSuccessor(agentIndex, action)
+
+            stack.append((agentIndex, depth, gameState, True, alpha, beta, legalActions))
+            stack.append((nextAgentIndex, nextDepth, successor, False, alpha, beta, None))
+      elif gameState.isWin() or gameState.isLose() or depth >= DEPTH:
+        retVal = self.evaluationFunction(gameState)
+      else:
+        legalActions = gameState.getLegalActions(agentIndex)
+
+        if not legalActions:
+          retVal = self.evaluationFunction(gameState)
+        else:
+          nextAgentIndex = get_next_agent_index(agentIndex)
+          nextDepth = (depth + 1) if nextAgentIndex == PACMAN_INDEX else depth
+          
+          action = legalActions.pop()
+          successor = gameState.generateSuccessor(agentIndex, action)
+
+          stack.append((agentIndex, depth, gameState, True, alpha, beta, legalActions))
+          stack.append((nextAgentIndex, nextDepth, successor, False, alpha, beta, None))
+
+          retVal = N_INF if isMaxLayer else INF
+
+      returnStack.append(retVal)
+
+    if len(returnStack) != len(INITIAL_LEGAL_ACTIONS):
+      raise RuntimeError("Something went wrong while searching minimax tree.")
+    
+    score, action = max(zip(returnStack, reversed(INITIAL_LEGAL_ACTIONS)))
+    return action
 
 ######################################################################################
 # Problem 3a: implementing expectimax
@@ -200,29 +333,111 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
     Your expectimax agent (problem 3)
   """
 
-  def getAction(self, gameState):
+  def getAction(self, gameState: GameState):
     """
       Returns the expectimax action using self.depth and self.evaluationFunction
 
       All ghosts should be modeled as choosing uniformly at random from their
       legal moves.
     """
+    AGENT_NUM = gameState.getNumAgents()
+    PACMAN_INDEX = self.index
+    DEPTH = self.depth
+    INITIAL_LEGAL_ACTIONS = gameState.getLegalActions(PACMAN_INDEX)
 
-    # BEGIN_YOUR_ANSWER (our solution is 30 lines of code, but don't worry if you deviate from this)
-    raise NotImplementedError  # remove this line before writing code
-    # END_YOUR_ANSWER
+    assert DEPTH >= 0, "Depth should be non-negative integer."
+    assert INITIAL_LEGAL_ACTIONS, "There should be at least one legal action."
+    assert AGENT_NUM >= 1, "There should be at least one agent."
+    assert 0 <= PACMAN_INDEX < AGENT_NUM, "Pacman index out of bounds."
+    assert callable(self.evaluationFunction), "evaluationFunction should be callable."
+    assert type(self.evaluationFunction(gameState)) in (int, float), "evaluationFunction should return a number."
+
+    if len(INITIAL_LEGAL_ACTIONS) == 1:
+      return INITIAL_LEGAL_ACTIONS.pop()
+
+    def get_next_agent_index(agentIndex: int) -> int:
+      return (agentIndex + 1) % AGENT_NUM
+    
+    def mean(values: Iterable[int | float]) -> float:
+      vals = list(values)
+      return sum(vals) / len(vals)
+
+    stack: list[tuple[int, int, GameState, bool, int]] = []
+    returnStack: list[int | float] = []
+
+    nextAgentIndex = get_next_agent_index(PACMAN_INDEX)
+    nextDepth = 1 if nextAgentIndex == PACMAN_INDEX else 0
+    for action in INITIAL_LEGAL_ACTIONS:
+      successor = gameState.generateSuccessor(PACMAN_INDEX, action)
+      stack.append((nextAgentIndex, nextDepth, successor, False, 0))
+
+    while stack:
+      agentIndex, depth, gameState, isRetState, retNums = stack.pop()
+
+      if isRetState:
+        compareFunc = max if agentIndex == PACMAN_INDEX else mean
+        retVal = compareFunc((returnStack.pop() for _ in range(retNums)))
+      elif gameState.isWin() or gameState.isLose() or depth >= DEPTH:
+        retVal = self.evaluationFunction(gameState)
+      else:
+        legalActions = gameState.getLegalActions(agentIndex)
+
+        if not legalActions:
+          retVal = self.evaluationFunction(gameState)
+        else:
+          nextAgentIndex = get_next_agent_index(agentIndex)
+          nextDepth = (depth + 1) if nextAgentIndex == PACMAN_INDEX else depth
+
+          stack.append((agentIndex, depth, gameState, True, len(legalActions)))
+          for action in legalActions:
+            successor = gameState.generateSuccessor(agentIndex, action)
+            stack.append((nextAgentIndex, nextDepth, successor, False, 0))
+
+          continue
+
+      returnStack.append(retVal)
+
+    if len(returnStack) != len(INITIAL_LEGAL_ACTIONS):
+      raise RuntimeError("Something went wrong while searching minimax tree.")
+
+    score, action = max(zip(returnStack, reversed(INITIAL_LEGAL_ACTIONS)))
+    return action
 
 ######################################################################################
 # Problem 4a (extra credit): creating a better evaluation function
 
-def betterEvaluationFunction(currentGameState):
+def betterEvaluationFunction(currentGameState: GameState) -> float | int:
   """
   Your extreme, unstoppable evaluation function (problem 4).
   """
+  INF = float('inf')
+  epsilon = 0.01
 
-  # BEGIN_YOUR_ANSWER (our solution is 60 lines of code, but don't worry if you deviate from this)
-  raise NotImplementedError  # remove this line before writing code
-  # END_YOUR_ANSWER
+  score = currentGameState.getScore()
+  
+  pacmanPos = currentGameState.getPacmanPosition()
+  capsulesPos = currentGameState.getCapsules()
+  foodsPos = currentGameState.getFood().asList()
+  scaredGhosts = [ghost for ghost in currentGameState.getGhostStates() if ghost.scaredTimer >= 1]
+
+  foodDists = [INF, *(manhattanDistance(pacmanPos, foodPos) for foodPos in foodsPos)]
+  capsuleDists = [INF, *(manhattanDistance(pacmanPos, capPos) for capPos in capsulesPos)]
+  scaredGhostDists = [INF, *(manhattanDistance(pacmanPos, ghost.getPosition()) for ghost in scaredGhosts)]
+  
+  minFoodDist = min(foodDists) + epsilon
+  minCapsuleDist = min(capsuleDists) + epsilon
+  minScaredGhostDist = min(scaredGhostDists) + epsilon
+
+  features = [1 / minFoodDist, 1 / minScaredGhostDist, score, len(foodsPos), len(capsulesPos)]
+  weights = [9, 165, 1.3125, -9, -800]
+
+  if not scaredGhosts:
+    features.append(1 / minCapsuleDist)
+    weights.append(550)
+
+  finalScore = sum(map(lambda x: x[0] * x[1], zip(features, weights)))
+
+  return finalScore
 
 # Abbreviation
 better = betterEvaluationFunction
