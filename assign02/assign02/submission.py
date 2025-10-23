@@ -172,8 +172,6 @@ class ParticleFilter(object):
         self.transProb = util.loadTransProb()
         self.transProbDict = dict()
         for (oldTile, newTile) in self.transProb:
-            if oldTile == (2, 10):
-                print(oldTile)
             if not oldTile in self.transProbDict:
                 self.transProbDict[oldTile] = collections.defaultdict(int)
             self.transProbDict[oldTile][newTile] = self.transProb[(oldTile, newTile)]
@@ -263,10 +261,6 @@ class ParticleFilter(object):
     #   and call util.weightedRandomChoice() $once per particle$ on the tile.
     ############################################################
     def elapseTime(self):
-        #for oldTile, cnt in self.particles.items():
-            #print(oldTile)
-            #print(self.transProbDict[oldTile])
-
         self.particles = collections.defaultdict(int, collections.Counter(
             newTile 
             for oldTile, cnt in self.particles.items() 
