@@ -26,10 +26,10 @@ def get_conditional_prob1(delta: float, epsilon: float, eta: float, c2: int, d2:
     P_c2 = tuple(map(lambda c2: sum(P_c1[c1] * P_c_given_cp(c2, c1) for c1 in DOMAIN), DOMAIN))
     P_d2_given_c2 = tuple(map(P_d_given_c, (d2, d2), DOMAIN))
 
-    P_d2 = tuple(map(math.prod, zip(P_c2, P_d2_given_c2)))
-    normalizer = sum(P_d2)
+    P_c2d2 = tuple(map(math.prod, zip(P_c2, P_d2_given_c2)))
+    normalizer = sum(P_c2d2)
 
-    return P_d2[c2] / normalizer
+    return P_c2d2[c2] / normalizer
 
 
 def get_conditional_prob2(delta: float, epsilon: float, eta: float, c2: int, d2: int, d3: int) -> float:
