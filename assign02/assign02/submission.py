@@ -1,4 +1,4 @@
-# ID: 20250123 NAME: Sujin Woo
+# ID: 20240614 NAME: Jongwon Lee
 ######################################################################################
 
 from engine.const import Const
@@ -7,7 +7,7 @@ import util, math, random, collections
 
 ############################################################
 # Problem 1: Warmup
-def get_conditional_prob1(delta, epsilon, eta, c2, d2):
+def get_conditional_prob1(delta: float, epsilon: float, eta: float, c2: int, d2: int) -> float:
     """
     :param delta: [δ] is the parameter governing the distribution of the initial car's position
     :param epsilon: [ε] is the parameter governing the conditional distribution of the next car's position given the previos car's position
@@ -17,11 +17,19 @@ def get_conditional_prob1(delta, epsilon, eta, c2, d2):
 
     :returns: a number between 0~1 corresponding to P(C_2=c2 | D_2=d2)
     """
-    # Problem 1a
-    # BEGIN_YOUR_ANSWER (our solution is 14 lines of code, but don't worry if you deviate from this)
-    raise NotImplementedError  # remove this line before writing code
-    # END_YOUR_ANSWER
+    DOMAIN = 0, 1
+    
+    P_c1 = delta, 1 - delta
+    P_c_given_cp = lambda c, cp: epsilon if c != cp else 1 - epsilon
+    P_d_given_c = lambda d, c: eta if d != c else 1 - eta
 
+    P_c2 = tuple(map(lambda c2: sum(P_c1[c1] * P_c_given_cp(c2, c1) for c1 in DOMAIN), DOMAIN))
+    P_d2_given_c2 = tuple(map(P_d_given_c, (d2, d2), DOMAIN))
+
+    P_d2 = tuple(map(math.prod, zip(P_c2, P_d2_given_c2)))
+    normalizer = sum(P_d2)
+
+    return P_d2[c2] / normalizer
 
 def get_conditional_prob2(delta, epsilon, eta, c2, d2, d3):
     """
