@@ -135,9 +135,18 @@ class ExactInference(object):
     def elapseTime(self):
         if self.skipElapse:
             return  ### ONLY FOR THE GRADER TO USE IN Problem 2
-        # BEGIN_YOUR_ANSWER (our solution is 8 lines of code, but don't worry if you deviate from this)
-        raise NotImplementedError  # remove this line before writing code
-        # END_YOUR_ANSWER
+        
+        belief = util.Belief(self.belief.getNumRows(), self.belief.getNumCols())
+        for tile in itertools.product(range(self.belief.getNumRows()), range(self.belief.getNumCols())):
+            prob = sum(
+                self.belief.getProb(*oldTile) * transProb
+                for (oldTile, newTile), transProb in self.transProb.items()
+                if newTile == tile
+            )
+            belief.setProb(*tile, prob)
+        
+        self.belief = belief
+        self.belief.normalize()
 
     # Function: Get Belief
     # ---------------------
