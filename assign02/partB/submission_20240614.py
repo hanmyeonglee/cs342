@@ -1,13 +1,13 @@
-# ID: 20250123 NAME: Sujin Woo
+# ID: 20240614 NAME: Jongwon Lee
 ######################################################################################
 
 from engine.const import Const
-import util, math, random, collections
+import util, math, random, collections, itertools
 
 
 ############################################################
 # Problem 1: Warmup
-def get_conditional_prob1(delta, epsilon, eta, c2, d2):
+def get_conditional_prob1(delta: float, epsilon: float, eta: float, c2: int, d2: int) -> float:
     """
     :param delta: [δ] is the parameter governing the distribution of the initial car's position
     :param epsilon: [ε] is the parameter governing the conditional distribution of the next car's position given the previos car's position
@@ -17,13 +17,22 @@ def get_conditional_prob1(delta, epsilon, eta, c2, d2):
 
     :returns: a number between 0~1 corresponding to P(C_2=c2 | D_2=d2)
     """
-    # Problem 1a
-    # BEGIN_YOUR_ANSWER (our solution is 14 lines of code, but don't worry if you deviate from this)
-    raise NotImplementedError  # remove this line before writing code
-    # END_YOUR_ANSWER
+    DOMAIN = 0, 1
+    
+    P_c1 = delta, 1 - delta
+    P_c_given_cp = lambda c, cp: epsilon if c != cp else 1 - epsilon
+    P_d_given_c = lambda d, c: eta if d != c else 1 - eta
+
+    P_c2 = tuple(map(lambda c2: sum(P_c1[c1] * P_c_given_cp(c2, c1) for c1 in DOMAIN), DOMAIN))
+    P_d2_given_c2 = tuple(map(P_d_given_c, (d2, d2), DOMAIN))
+
+    P_d2 = tuple(map(math.prod, zip(P_c2, P_d2_given_c2)))
+    normalizer = sum(P_d2)
+
+    return P_d2[c2] / normalizer
 
 
-def get_conditional_prob2(delta, epsilon, eta, c2, d2, d3):
+def get_conditional_prob2(delta: float, epsilon: float, eta: float, c2: int, d2: int, d3: int) -> float:
     """
     :param delta: [δ] is the parameter governing the distribution of the initial car's position
     :param epsilon: [ε] is the parameter governing the conditional distribution of the next car's position given the previos car's position
@@ -34,21 +43,28 @@ def get_conditional_prob2(delta, epsilon, eta, c2, d2, d3):
 
     :returns: a number between 0~1 corresponding to P(C_2=c2 | D_2=d2, D_3=d3)
     """
-    # Problem 1b
-    # BEGIN_YOUR_ANSWER (our solution is 17 lines of code, but don't worry if you deviate from this)
-    raise NotImplementedError  # remove this line before writing code
-    # END_YOUR_ANSWER
+    DOMAIN = 0, 1
+
+    P_c1 = delta, 1 - delta
+    P_c_given_cp = lambda c, cp: epsilon if c != cp else 1 - epsilon
+    P_d_given_c = lambda d, c: eta if d != c else 1 - eta
+
+    P_c2 = tuple(map(lambda c2: sum(P_c1[c1] * P_c_given_cp(c2, c1) for c1 in DOMAIN), DOMAIN))
+    P_d2_given_c2 = tuple(map(P_d_given_c, (d2, d2), DOMAIN))
+    P_d3_given_c2 = tuple(map(lambda c2: sum(P_c_given_cp(c3, c2) * P_d_given_c(d3, c3) for c3 in DOMAIN), DOMAIN))
+    
+    P_d2d3_given_c2 = tuple(map(math.prod, zip(P_d2_given_c2, P_d3_given_c2)))
+    P_d2d3 = tuple(map(math.prod, zip(P_c2, P_d2d3_given_c2)))
+    normalizer = sum(P_d2d3)
+
+    return P_d2d3[c2] / normalizer
 
 
-# Problem 1c
 def get_epsilon():
     """
     return a value of epsilon (ε)
     """
-    # Problem 1c
-    # BEGIN_YOUR_ANSWER (our solution is 1 lines of code, but don't worry if you deviate from this)
-    raise NotImplementedError  # remove this line before writing code
-    # END_YOUR_ANSWER
+    return 0.5
 
 
 # Class: ExactInference
@@ -88,10 +104,16 @@ class ExactInference(object):
     # - Don't forget to normalize self.belief!
     ############################################################
 
-    def observe(self, agentX, agentY, observedDist):
-        # BEGIN_YOUR_ANSWER (our solution is 9 lines of code, but don't worry if you deviate from this)
-        raise NotImplementedError  # remove this line before writing code
-        # END_YOUR_ANSWER
+    def observe(self, agentX: int, agentY: int, observedDist: float):
+        for r, c in itertools.product(range(self.belief.getNumRows()), range(self.belief.getNumCols())):
+            ax, ay = util.colToX(c), util.rowToY(r)
+            mu = math.dist((agentX, agentY), (ax, ay))
+            prob = util.pdf(mu, Const.SONAR_STD, observedDist)
+            prev_prob = self.belief.getProb(r, c)
+            self.belief.setProb(r, c, prev_prob * prob)
+
+        self.belief.normalize()
+
 
     ############################################################
     # Problem 3:

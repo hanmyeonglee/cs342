@@ -2,7 +2,7 @@
 ######################################################################################
 
 from engine.const import Const
-import util, math, random, collections
+import util, math, random, collections, itertools
 
 
 ############################################################
@@ -32,7 +32,7 @@ def get_conditional_prob1(delta: float, epsilon: float, eta: float, c2: int, d2:
     return P_d2[c2] / normalizer
 
 
-def get_conditional_prob2(delta, epsilon, eta, c2, d2, d3):
+def get_conditional_prob2(delta: float, epsilon: float, eta: float, c2: int, d2: int, d3: int) -> float:
     """
     :param delta: [δ] is the parameter governing the distribution of the initial car's position
     :param epsilon: [ε] is the parameter governing the conditional distribution of the next car's position given the previos car's position
@@ -104,10 +104,16 @@ class ExactInference(object):
     # - Don't forget to normalize self.belief!
     ############################################################
 
-    def observe(self, agentX, agentY, observedDist):
-        # BEGIN_YOUR_ANSWER (our solution is 9 lines of code, but don't worry if you deviate from this)
-        raise NotImplementedError  # remove this line before writing code
-        # END_YOUR_ANSWER
+    def observe(self, agentX: int, agentY: int, observedDist: float):
+        for r, c in itertools.product(range(self.belief.getNumRows()), range(self.belief.getNumCols())):
+            ax, ay = util.colToX(c), util.rowToY(r)
+            mu = math.dist((agentX, agentY), (ax, ay))
+            prob = util.pdf(mu, Const.SONAR_STD, observedDist)
+            prev_prob = self.belief.getProb(r, c)
+            self.belief.setProb(r, c, prev_prob * prob)
+
+        self.belief.normalize()
+
 
     ############################################################
     # Problem 3:
