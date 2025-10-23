@@ -136,14 +136,10 @@ class ExactInference(object):
         if self.skipElapse:
             return  ### ONLY FOR THE GRADER TO USE IN Problem 2
         
-        belief = util.Belief(self.belief.getNumRows(), self.belief.getNumCols())
-        for tile in itertools.product(range(self.belief.getNumRows()), range(self.belief.getNumCols())):
-            prob = sum(
-                self.belief.getProb(*oldTile) * transProb
-                for (oldTile, newTile), transProb in self.transProb.items()
-                if newTile == tile
-            )
-            belief.setProb(*tile, prob)
+        belief = util.Belief(self.belief.getNumRows(), self.belief.getNumCols(), 0.0)
+        for (oldTile, newTile), transProb in self.transProb.items():
+            prob = self.belief.getProb(*oldTile) * transProb
+            belief.addProb(*newTile, prob)
         
         self.belief = belief
         self.belief.normalize()
