@@ -104,7 +104,7 @@ class ExactInference(object):
     # - Don't forget to normalize self.belief!
     ############################################################
 
-    def observe(self, agentX: int, agentY: int, observedDist: float):
+    def observe(self, agentX: float, agentY: float, observedDist: float):
         for r, c in itertools.product(range(self.belief.getNumRows()), range(self.belief.getNumCols())):
             ax, ay = util.colToX(c), util.rowToY(r)
             mu = math.dist((agentX, agentY), (ax, ay))
@@ -176,6 +176,8 @@ class ParticleFilter(object):
         self.transProb = util.loadTransProb()
         self.transProbDict = dict()
         for (oldTile, newTile) in self.transProb:
+            if oldTile == (2, 10):
+                print(oldTile)
             if not oldTile in self.transProbDict:
                 self.transProbDict[oldTile] = collections.defaultdict(int)
             self.transProbDict[oldTile][newTile] = self.transProb[(oldTile, newTile)]
@@ -230,10 +232,18 @@ class ParticleFilter(object):
     # - Create |self.NUM_PARTICLES| new particles during resampling.
     # - To pass the grader, you must call util.weightedRandomChoice() once per new particle.
     ############################################################
-    def observe(self, agentX, agentY, observedDist):
-        # BEGIN_YOUR_ANSWER (our solution is 12 lines of code, but don't worry if you deviate from this)
-        raise NotImplementedError  # remove this line before writing code
-        # END_YOUR_ANSWER
+    def observe(self, agentX: float, agentY: float, observedDist: float):
+        def getWeightedCount(r: int, c: int, cnt: int) -> float:
+            x, y = util.colToX(c), util.rowToY(r)
+            mu = math.dist((agentX, agentY), (x, y))
+            prob = util.pdf(mu, Const.SONAR_STD, observedDist)
+            return cnt * prob
+
+        weightedDict = {tile: getWeightedCount(*tile, cnt) for tile, cnt in self.particles.items()}
+        self.particles = collections.defaultdict(int, collections.Counter(
+            util.weightedRandomChoice(weightedDict) for _ in range(self.NUM_PARTICLES)
+        ))
+
         self.updateBelief()
 
     ############################################################
@@ -257,9 +267,17 @@ class ParticleFilter(object):
     #   and call util.weightedRandomChoice() $once per particle$ on the tile.
     ############################################################
     def elapseTime(self):
-        # BEGIN_YOUR_ANSWER (our solution is 7 lines of code, but don't worry if you deviate from this)
-        raise NotImplementedError  # remove this line before writing code
-        # END_YOUR_ANSWER
+        #for oldTile, cnt in self.particles.items():
+            #print(oldTile)
+            #print(self.transProbDict[oldTile])
+
+        self.particles = collections.defaultdict(int, collections.Counter(
+            newTile 
+            for oldTile, cnt in self.particles.items() 
+            if oldTile in self.transProbDict
+            for newTile in map(util.weightedRandomChoice, [self.transProbDict[oldTile]] * cnt)
+        ))
+        self.updateBelief()
 
     # Function: Get Belief
     # ---------------------
