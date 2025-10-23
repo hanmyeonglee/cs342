@@ -64,10 +64,7 @@ def get_epsilon():
     """
     return a value of epsilon (ε)
     """
-    # Problem 1c
-    # BEGIN_YOUR_ANSWER (our solution is 1 lines of code, but don't worry if you deviate from this)
-    raise NotImplementedError  # remove this line before writing code
-    # END_YOUR_ANSWER
+    return 0.5
 
 
 # Class: ExactInference
