@@ -6,6 +6,7 @@ import math
 import sys
 from collections import Counter
 from util import *
+from typing import Callable
 
 # You may use this seed
 SEED = 4312
@@ -15,14 +16,19 @@ SEED = 4312
 ############################################################
 
 
-def problem_1a():
+def problem_1a() -> dict[str, int]:
     """
     return a dictionary that contains the following words as keys:
         pretty, good, bad, plot, not, scenery
     """
-    # BEGIN_YOUR_ANSWER (our solution is 1 lines of code, but don't worry if you deviate from this)
-    raise NotImplementedError  # remove this line before writing code
-    # END_YOUR_ANSWER
+    return {
+        "pretty": 1,
+        "good": 0,
+        "bad": -1,
+        "plot": -1,
+        "not": -1,
+        "scenery": 0,
+    }
 
 
 ############################################################
@@ -33,7 +39,7 @@ def problem_1a():
 # Problem 2a: feature extraction
 
 
-def extractWordFeatures(x):
+def extractWordFeatures(x: str) -> dict[str, int]:
     """
     Extract word features for a string x. Words are delimited by
     whitespace characters only.
@@ -41,16 +47,20 @@ def extractWordFeatures(x):
     @return dict: feature vector representation of x.
     Example: "I am what I am" --> {'I': 2, 'am': 2, 'what': 1}
     """
-    # BEGIN_YOUR_ANSWER (our solution is 6 lines of code, but don't worry if you deviate from this)
-    raise NotImplementedError  # remove this line before writing code
-    # END_YOUR_ANSWER
+    return dict(Counter(x.split()))
 
 
 ############################################################
 # Problem 2b: stochastic gradient descent
 
 
-def learnPredictor(trainExamples, testExamples, featureExtractor, numIters, eta):
+def learnPredictor(
+    trainExamples: list[tuple[str, int]], 
+    testExamples: list[tuple[str, int]], 
+    featureExtractor: Callable[[str], dict[str, int]],
+    numIters: int, 
+    eta: float
+) -> dict[str, float]:
     """
     Given |trainExamples| and |testExamples| (each one is a list of (x,y)
     pairs), a |featureExtractor| to apply to x, and the number of iterations to
@@ -66,14 +76,18 @@ def learnPredictor(trainExamples, testExamples, featureExtractor, numIters, eta)
     2. don't shuffle trainExamples and use them in the original order to update weights.
     3. don't use any mini-batch whose size is more than 1
     """
-    weights = {}  # feature => weight
+    weights = collections.defaultdict(int)  # feature => weight
 
-    def sigmoid(n):
+    def sigmoid(n: float) -> float:
         return 1 / (1 + math.exp(-n))
 
-    # BEGIN_YOUR_ANSWER (our solution is 14 lines of code, but don't worry if you deviate from this)
-    raise NotImplementedError  # remove this line before writing code
-    # END_YOUR_ANSWER
+    featureExtractedTrainExamples = [(featureExtractor(x), y) for x, y in trainExamples]
+    for _ in range(numIters):
+        for features, y in featureExtractedTrainExamples:
+            error = int(y == 1) - sigmoid(dotProduct(weights, features))
+            for f, v in features.items():
+                weights[f] += eta * error * v
+
     return weights
 
 
@@ -81,7 +95,7 @@ def learnPredictor(trainExamples, testExamples, featureExtractor, numIters, eta)
 # Problem 2c: bigram features
 
 
-def extractBigramFeatures(x):
+def extractBigramFeatures(x: str) -> dict[str | tuple[str, str], int]:
     """
     Extract unigram and bigram features for a string x, where bigram feature is a tuple of two consecutive words. In addition, you should consider special words '<s>' and '</s>' which represent the start and the end of sentence respectively. You can exploit extractWordFeatures to extract unigram features.
 
@@ -89,7 +103,9 @@ def extractBigramFeatures(x):
     >>> extractBigramFeatures("I am what I am")
     {('am', 'what'): 1, 'what': 1, ('I', 'am'): 2, 'I': 2, ('what', 'I'): 1, 'am': 2, ('<s>', 'I'): 1, ('am', '</s>'): 1}
     """
-    # BEGIN_YOUR_ANSWER (our solution is 5 lines of code, but don't worry if you deviate from this)
-    raise NotImplementedError  # remove this line before writing code
-    # END_YOUR_ANSWER
+    phi = extractWordFeatures(x)
+    
+    words = ['<s>'] + x.split() + ['</s>']
+    phi.update(Counter(zip(words, words[1:])))
+
     return phi
