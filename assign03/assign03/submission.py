@@ -97,7 +97,7 @@ def learnPredictor(
 # Problem 2c: bigram features
 
 
-def extractBigramFeatures(x):
+def extractBigramFeatures(x: str) -> dict[str | tuple[str, str], int]:
     """
     Extract unigram and bigram features for a string x, where bigram feature is a tuple of two consecutive words. In addition, you should consider special words '<s>' and '</s>' which represent the start and the end of sentence respectively. You can exploit extractWordFeatures to extract unigram features.
 
@@ -105,7 +105,14 @@ def extractBigramFeatures(x):
     >>> extractBigramFeatures("I am what I am")
     {('am', 'what'): 1, 'what': 1, ('I', 'am'): 2, 'I': 2, ('what', 'I'): 1, 'am': 2, ('<s>', 'I'): 1, ('am', '</s>'): 1}
     """
-    # BEGIN_YOUR_ANSWER (our solution is 5 lines of code, but don't worry if you deviate from this)
-    raise NotImplementedError  # remove this line before writing code
-    # END_YOUR_ANSWER
+    phi = extractWordFeatures(x)
+    
+    words = ['<s>'] + x.split() + ['</s>']
+    bigram_words = []
+    for i in range(len(words) - 1):
+        bigram = (words[i], words[i + 1])
+        bigram_words.append(bigram)
+
+    phi.update(Counter(bigram_words))
+
     return phi
