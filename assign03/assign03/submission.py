@@ -38,7 +38,7 @@ def problem_1a() -> dict[str, int]:
 # Problem 2a: feature extraction
 
 
-def extractWordFeatures(x):
+def extractWordFeatures(x: str) -> dict[str, int]:
     """
     Extract word features for a string x. Words are delimited by
     whitespace characters only.
@@ -46,9 +46,7 @@ def extractWordFeatures(x):
     @return dict: feature vector representation of x.
     Example: "I am what I am" --> {'I': 2, 'am': 2, 'what': 1}
     """
-    # BEGIN_YOUR_ANSWER (our solution is 6 lines of code, but don't worry if you deviate from this)
-    raise NotImplementedError  # remove this line before writing code
-    # END_YOUR_ANSWER
+    return dict(Counter(x.split()))
 
 
 ############################################################
