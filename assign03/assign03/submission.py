@@ -106,11 +106,6 @@ def extractBigramFeatures(x: str) -> dict[str | tuple[str, str], int]:
     phi = extractWordFeatures(x)
     
     words = ['<s>'] + x.split() + ['</s>']
-    bigram_words = []
-    for i in range(len(words) - 1):
-        bigram = (words[i], words[i + 1])
-        bigram_words.append(bigram)
-
-    phi.update(Counter(bigram_words))
+    phi.update(Counter(zip(words, words[1:])))
 
     return phi
