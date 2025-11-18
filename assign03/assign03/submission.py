@@ -15,14 +15,19 @@ SEED = 4312
 ############################################################
 
 
-def problem_1a():
+def problem_1a() -> dict[str, int]:
     """
     return a dictionary that contains the following words as keys:
         pretty, good, bad, plot, not, scenery
     """
-    # BEGIN_YOUR_ANSWER (our solution is 1 lines of code, but don't worry if you deviate from this)
-    raise NotImplementedError  # remove this line before writing code
-    # END_YOUR_ANSWER
+    return {
+        "pretty": 1,
+        "good": 0,
+        "bad": -1,
+        "plot": -1,
+        "not": -1,
+        "scenery": 0,
+    }
 
 
 ############################################################
