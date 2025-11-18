@@ -6,6 +6,7 @@ import math
 import sys
 from collections import Counter
 from util import *
+from typing import Callable
 
 # You may use this seed
 SEED = 4312
@@ -56,10 +57,10 @@ def extractWordFeatures(x: str) -> dict[str, int]:
 def learnPredictor(
     trainExamples: list[tuple[str, int]], 
     testExamples: list[tuple[str, int]], 
-    featureExtractor: callable, 
+    featureExtractor: Callable[[str], dict[str, int]],
     numIters: int, 
     eta: float
-):
+) -> dict[str, float]:
     """
     Given |trainExamples| and |testExamples| (each one is a list of (x,y)
     pairs), a |featureExtractor| to apply to x, and the number of iterations to
@@ -79,14 +80,11 @@ def learnPredictor(
 
     def sigmoid(n: float) -> float:
         return 1 / (1 + math.exp(-n))
-    
-    def boolToInt(b: bool) -> int:
-        return 1 if b else 0
 
     featureExtractedTrainExamples = [(featureExtractor(x), y) for x, y in trainExamples]
     for _ in range(numIters):
         for features, y in featureExtractedTrainExamples:
-            error = boolToInt(y == 1) - sigmoid(dotProduct(weights, features))
+            error = int(y == 1) - sigmoid(dotProduct(weights, features))
             for f, v in features.items():
                 weights[f] += eta * error * v
 
