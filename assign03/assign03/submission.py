@@ -53,7 +53,13 @@ def extractWordFeatures(x: str) -> dict[str, int]:
 # Problem 2b: stochastic gradient descent
 
 
-def learnPredictor(trainExamples, testExamples, featureExtractor, numIters, eta):
+def learnPredictor(
+    trainExamples: list[tuple[str, int]], 
+    testExamples: list[tuple[str, int]], 
+    featureExtractor: callable, 
+    numIters: int, 
+    eta: float
+):
     """
     Given |trainExamples| and |testExamples| (each one is a list of (x,y)
     pairs), a |featureExtractor| to apply to x, and the number of iterations to
@@ -69,14 +75,21 @@ def learnPredictor(trainExamples, testExamples, featureExtractor, numIters, eta)
     2. don't shuffle trainExamples and use them in the original order to update weights.
     3. don't use any mini-batch whose size is more than 1
     """
-    weights = {}  # feature => weight
+    weights = collections.defaultdict(int)  # feature => weight
 
-    def sigmoid(n):
+    def sigmoid(n: float) -> float:
         return 1 / (1 + math.exp(-n))
+    
+    def boolToInt(b: bool) -> int:
+        return 1 if b else 0
 
-    # BEGIN_YOUR_ANSWER (our solution is 14 lines of code, but don't worry if you deviate from this)
-    raise NotImplementedError  # remove this line before writing code
-    # END_YOUR_ANSWER
+    featureExtractedTrainExamples = [(featureExtractor(x), y) for x, y in trainExamples]
+    for _ in range(numIters):
+        for features, y in featureExtractedTrainExamples:
+            error = boolToInt(y == 1) - sigmoid(dotProduct(weights, features))
+            for f, v in features.items():
+                weights[f] += eta * error * v
+
     return weights
 
 
